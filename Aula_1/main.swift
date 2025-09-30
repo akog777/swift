@@ -1,9 +1,5 @@
-//export PATH="/workspaces/swift/swift-5.9.2-RELEASE-ubuntu22.04/usr/bin:$PATH"
 import Foundation
 
-// ============================
-// DIA 1 - Estruturas Básicas
-// ============================
 class Pessoa {
     var nome: String
     var email: String
@@ -36,9 +32,8 @@ class Aluno: Pessoa {
     }
 
     override func getDescricao() -> String {
-        let descricaoPai = super.getDescricao()
         return """
-        \(descricaoPai)
+        \(super.getDescricao())
         Matrícula: \(matricula)
         Plano: \(plano.nome)
         Nível: \(nivel.rawValue)
@@ -97,9 +92,6 @@ class PlanoAnual: Plano {
     }
 }
 
-// ============================
-// DIA 2 - Componentes, Contratos e Aulas
-// ============================
 protocol Manutencao {
     var nomeItem: String { get }
     var dataUltimaManutencao: String { get set }
@@ -115,9 +107,8 @@ class Aparelho: Manutencao {
     }
 
     func realizarManutencao() -> Bool {
-        print("Realizando manutenção no aparelho: \(nomeItem)...")
+        print("Realizando manutenção em \(nomeItem)")
         self.dataUltimaManutencao = "30/08/2025"
-        print("Manutenção concluída em \(dataUltimaManutencao)")
         return true
     }
 }
@@ -158,7 +149,7 @@ class AulaColetiva: Aula {
 
     func inscrever(aluno: Aluno) -> Bool {
         if alunosInscritos.count >= capacidadeMaxima {
-            print("Turma cheia! Não foi possível inscrever \(aluno.nome).")
+            print("Turma cheia! \(aluno.nome) não inscrito.")
             return false
         }
         if alunosInscritos[aluno.matricula] != nil {
@@ -166,75 +157,65 @@ class AulaColetiva: Aula {
             return false
         }
         alunosInscritos[aluno.matricula] = aluno
-        print("\(aluno.nome) inscrito com sucesso na aula \(nome).")
+        print("\(aluno.nome) inscrito na aula de \(nome).")
         return true
     }
 
     override func getDescricao() -> String {
+        let listaAlunos = alunosInscritos.values.map { $0.nome }.joined(separator: ", ")
         return """
         \(super.getDescricao())
         Vagas ocupadas: \(alunosInscritos.count)/\(capacidadeMaxima)
+        Alunos Inscritos: \(alunosInscritos.isEmpty ? "Nenhum" : listaAlunos)
         """
     }
 }
 
-// ============================
-// TESTES
-// ============================
 let planoMensal = PlanoMensal()
 let planoAnual = PlanoAnual()
 
 let aluno1 = Aluno(nome: "Eduarda", email: "duda@email.com", matricula: "A1", plano: planoMensal)
 aluno1.nivel = .iniciante
-
 let aluno2 = Aluno(nome: "Pedro", email: "pedro@email.com", matricula: "B2", plano: planoAnual)
 aluno2.nivel = .intermediario
 
 let instrutor1 = Instrutor(nome: "João", email: "joao@academia.com", especialidade: "Personal Trainer")
-let instrutor2 = Instrutor(nome: "Maria", email: "maria@academia.com", especialidade: "Personal Trainer")
+let instrutor2 = Instrutor(nome: "Maria", email: "maria@academia.com", especialidade: "Yoga")
 
-print("""
-===============================
-    INFORMAÇÕES DA ACADEMIA
-===============================
-[ALUNO 1]
-\(aluno1.getDescricao())
-Mensalidade: R$ \(String(format: "%.2f", aluno1.plano.calcularMensalidade()))
--------------------------------
-[ALUNO 2]
-\(aluno2.getDescricao())
-Mensalidade: R$ \(String(format: "%.2f", aluno2.plano.calcularMensalidade()))
--------------------------------
-[INSTRUTOR]
-\(instrutor1.getDescricao())
-""")
 
-// Teste de Aparelho
+print("======= ALUNOS/INSTRUTORES =======")
+print("[Aluno 1]:")
+print(aluno1.getDescricao())
+print("Mensalidade: R$ \(String(format: "%.2f", aluno1.plano.calcularMensalidade()))")
+print("---------------------------------")
+print("\n[Aluno 2]:")
+print(aluno2.getDescricao())
+print("Mensalidade: R$ \(String(format: "%.2f", aluno2.plano.calcularMensalidade()))")
+print("---------------------------------")
+print("\n[Instrutor 1]:")
+print(instrutor1.getDescricao())
+print("---------------------------------")
+print("\n[Instrutor 2]:")
+print(instrutor2.getDescricao())
+
+print("\n========== MANUTENÇÃO ==========")
 let esteira = Aparelho(nomeItem: "Esteira")
-print("""
-===============================
-    INFORMAÇÕES DO APARELHO
-===============================
-Nome: \(esteira.nomeItem)
-Última manutenção: \(esteira.dataUltimaManutencao)
-""")
+print("\nAparelho: \(esteira.nomeItem), \nÚltima Manutenção: \(esteira.dataUltimaManutencao)")
 _ = esteira.realizarManutencao()
+print("Nova Última Manutenção: \(esteira.dataUltimaManutencao)")
 
-// Teste Aula Personal
+
+print("\n========== AULAS ==========")
 let aulaPersonal = AulaPersonal(nome: "Musculação", instrutor: instrutor1, aluno: aluno1)
-print("""
-------------------------------- 
-AULA PERSONAL
-\(aulaPersonal.getDescricao())
-_ = aulaPersonal.inscrever(aluno: aluno1)
-""")
+print("\nAULA PERSONAL")
+print(aulaPersonal.getDescricao())
 
-// Teste Aula Coletiva
+
 let aulaColetiva = AulaColetiva(nome: "Yoga", instrutor: instrutor2)
+
+print("\nInscrições em Aula Coletiva (Yoga):")
 _ = aulaColetiva.inscrever(aluno: aluno1)
 _ = aulaColetiva.inscrever(aluno: aluno2)
-print("""
--------------------------------
-AULA COLETIVA
-\(aulaColetiva.getDescricao())
-""")
+
+print("\nAULA COLETIVA")
+print(aulaColetiva.getDescricao())
