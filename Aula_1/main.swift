@@ -1,8 +1,12 @@
+//export PATH="/workspaces/swift/swift-5.9.2-RELEASE-ubuntu22.04/usr/bin:$PATH"
 import Foundation
 
+// ============================
+// DIA 1 - Estruturas Básicas
+// ============================
 class Pessoa {
-    let nome: String
-    let email: String
+    var nome: String
+    var email: String
 
     init(nome: String, email: String) {
         self.nome = nome
@@ -14,25 +18,14 @@ class Pessoa {
     }
 }
 
-enum NivelAluno {
-    case iniciante
-    case intermediario
-    case avancado
-
-    var descricao: String {
-        switch self {
-        case .iniciante: 
-            return "Iniciante"
-        case .intermediario: 
-            return "Intermediário"
-        case .avancado: 
-            return "Avançado"
-        }
-    }
+enum NivelAluno: String {
+    case iniciante = "Iniciante"
+    case intermediario = "Intermediário"
+    case avancado = "Avançado"
 }
 
 class Aluno: Pessoa {
-    let matricula: String
+    var matricula: String
     var nivel: NivelAluno = .iniciante
     private(set) var plano: Plano
 
@@ -41,20 +34,20 @@ class Aluno: Pessoa {
         self.plano = plano
         super.init(nome: nome, email: email)
     }
+
     override func getDescricao() -> String {
-        let base = super.getDescricao()
-        return "\(base)\nMatrícula: \(matricula)\nPlano: \(plano.nome)\nNível: \(nivel.descricao)"
-    }
-    func mensalidadeAtual() -> Double {
-        return plano.calcularMensalidade()
-    }
-    func atualizarPlano(_ novoPlano: Plano) {
-        self.plano = novoPlano
+        let descricaoPai = super.getDescricao()
+        return """
+        \(descricaoPai)
+        Matrícula: \(matricula)
+        Plano: \(plano.nome)
+        Nível: \(nivel.rawValue)
+        """
     }
 }
 
 class Instrutor: Pessoa {
-    let especialidade: String
+    var especialidade: String
 
     init(nome: String, email: String, especialidade: String) {
         self.especialidade = especialidade
@@ -62,20 +55,20 @@ class Instrutor: Pessoa {
     }
 
     override func getDescricao() -> String {
-        let base = super.getDescricao()
-        return "\(base)\nEspecialidade: \(especialidade)"
+        return """
+        \(super.getDescricao())
+        Especialidade: \(especialidade)
+        """
     }
 }
 
-
-
 class Plano {
-    let nome: String
+    var nome: String
 
     init(nome: String) {
         self.nome = nome
     }
-    
+
     func calcularMensalidade() -> Double {
         return 0.0
     }
@@ -97,33 +90,151 @@ class PlanoAnual: Plano {
     }
 
     override func calcularMensalidade() -> Double {
-        let valorMensalBase = 120.0
-        let custoTotal12Meses = valorMensalBase * 12.0 // 1440
-        let desconto = 0.20 // 20%
-        let custoComDesconto = custoTotal12Meses * (1.0 - desconto) // 1152
-        let valorMensalEquivalente = custoComDesconto / 12.0 // 96
-        return valorMensalEquivalente
+        let custoTotalAnual = 12.0 * 120.0
+        let custoComDesconto = custoTotalAnual * 0.80
+        let mensalidade = custoComDesconto / 12.0
+        return mensalidade
     }
 }
 
+// ============================
+// DIA 2 - Componentes, Contratos e Aulas
+// ============================
+protocol Manutencao {
+    var nomeItem: String { get }
+    var dataUltimaManutencao: String { get set }
+    func realizarManutencao() -> Bool
+}
+
+class Aparelho: Manutencao {
+    let nomeItem: String
+    var dataUltimaManutencao: String = "Nenhuma"
+
+    init(nomeItem: String) {
+        self.nomeItem = nomeItem
+    }
+
+    func realizarManutencao() -> Bool {
+        print("Realizando manutenção no aparelho: \(nomeItem)...")
+        self.dataUltimaManutencao = "30/08/2025"
+        print("Manutenção concluída em \(dataUltimaManutencao)")
+        return true
+    }
+}
+
+class Aula {
+    let nome: String
+    let instrutor: Instrutor
+
+    init(nome: String, instrutor: Instrutor) {
+        self.nome = nome
+        self.instrutor = instrutor
+    }
+
+    func getDescricao() -> String {
+        return "Aula: \(nome)\nInstrutor: \(instrutor.nome)"
+    }
+}
+
+class AulaPersonal: Aula {
+    let aluno: Aluno
+
+    init(nome: String, instrutor: Instrutor, aluno: Aluno) {
+        self.aluno = aluno
+        super.init(nome: nome, instrutor: instrutor)
+    }
+
+    override func getDescricao() -> String {
+        return """
+        \(super.getDescricao())
+        Aluno: \(aluno.nome)
+        """
+    }
+}
+
+class AulaColetiva: Aula {
+    private(set) var alunosInscritos: [String: Aluno] = [:]
+    let capacidadeMaxima: Int = 25
+
+    func inscrever(aluno: Aluno) -> Bool {
+        if alunosInscritos.count >= capacidadeMaxima {
+            print("Turma cheia! Não foi possível inscrever \(aluno.nome).")
+            return false
+        }
+        if alunosInscritos[aluno.matricula] != nil {
+            print("O aluno \(aluno.nome) já está inscrito.")
+            return false
+        }
+        alunosInscritos[aluno.matricula] = aluno
+        print("\(aluno.nome) inscrito com sucesso na aula \(nome).")
+        return true
+    }
+
+    override func getDescricao() -> String {
+        return """
+        \(super.getDescricao())
+        Vagas ocupadas: \(alunosInscritos.count)/\(capacidadeMaxima)
+        """
+    }
+}
+
+// ============================
+// TESTES
+// ============================
 let planoMensal = PlanoMensal()
 let planoAnual = PlanoAnual()
 
-let aluno1 = Aluno(nome: "João Silva", email: "joao@example.com", matricula: "A123", plano: planoMensal)
-aluno1.nivel = .intermediario
+let aluno1 = Aluno(nome: "Eduarda", email: "duda@email.com", matricula: "A1", plano: planoMensal)
+aluno1.nivel = .iniciante
 
-let aluno2 = Aluno(nome: "Maria Souza", email: "maria@example.com", matricula: "B456", plano: planoAnual)
-aluno2.nivel = .avancado
+let aluno2 = Aluno(nome: "Pedro", email: "pedro@email.com", matricula: "B2", plano: planoAnual)
+aluno2.nivel = .intermediario
 
-let instrutor = Instrutor(nome: "Carlos Pereira", email: "carlos@academia.com", especialidade: "Musculação")
+let instrutor1 = Instrutor(nome: "João", email: "joao@academia.com", especialidade: "Personal Trainer")
+let instrutor2 = Instrutor(nome: "Maria", email: "maria@academia.com", especialidade: "Personal Trainer")
 
-print("--- Aluno 1 ---")
-print(aluno1.getDescricao())
-print(String(format: "Mensalidade: R$ %.2f\n", aluno1.mensalidadeAtual()))
+print("""
+===============================
+    INFORMAÇÕES DA ACADEMIA
+===============================
+[ALUNO 1]
+\(aluno1.getDescricao())
+Mensalidade: R$ \(String(format: "%.2f", aluno1.plano.calcularMensalidade()))
+-------------------------------
+[ALUNO 2]
+\(aluno2.getDescricao())
+Mensalidade: R$ \(String(format: "%.2f", aluno2.plano.calcularMensalidade()))
+-------------------------------
+[INSTRUTOR]
+\(instrutor1.getDescricao())
+""")
 
-print("--- Aluno 2 ---")
-print(aluno2.getDescricao())
-print(String(format: "Mensalidade: R$ %.2f\n", aluno2.mensalidadeAtual()))
+// Teste de Aparelho
+let esteira = Aparelho(nomeItem: "Esteira")
+print("""
+===============================
+    INFORMAÇÕES DO APARELHO
+===============================
+Nome: \(esteira.nomeItem)
+Última manutenção: \(esteira.dataUltimaManutencao)
+""")
+_ = esteira.realizarManutencao()
 
-print("--- Instrutor ---")
-print(instrutor.getDescricao())
+// Teste Aula Personal
+let aulaPersonal = AulaPersonal(nome: "Musculação", instrutor: instrutor1, aluno: aluno1)
+print("""
+------------------------------- 
+AULA PERSONAL
+\(aulaPersonal.getDescricao())
+_ = aulaPersonal.inscrever(aluno: aluno1)
+""")
+
+// Teste Aula Coletiva
+let aulaColetiva = AulaColetiva(nome: "Yoga", instrutor: instrutor2)
+_ = aulaColetiva.inscrever(aluno: aluno1)
+_ = aulaColetiva.inscrever(aluno: aluno2)
+print("""
+-------------------------------
+AULA COLETIVA
+\(aulaColetiva.getDescricao())
+""")
