@@ -20,6 +20,40 @@ enum NivelAluno: String {
     case avancado = "Avançado"
 }
 
+class Plano {
+    var nome: String
+
+    init(nome: String) {
+        self.nome = nome
+    }
+
+    func calcularMensalidade() -> Double {
+        return 0.0
+    }
+}
+
+class PlanoMensal: Plano {
+    init() {
+        super.init(nome: "Plano Mensal")
+    }
+
+    override func calcularMensalidade() -> Double {
+        return 120.0
+    }
+}
+
+class PlanoAnual: Plano {
+    init() {
+        super.init(nome: "Plano Anual (Promocional)")
+    }
+
+    override func calcularMensalidade() -> Double {
+        let custoTotalAnual = 12.0 * 120.0
+        let custoComDesconto = custoTotalAnual * 0.80
+        return custoComDesconto / 12.0
+    }
+}
+
 class Aluno: Pessoa {
     var matricula: String
     var nivel: NivelAluno = .iniciante
@@ -57,50 +91,15 @@ class Instrutor: Pessoa {
     }
 }
 
-class Plano {
-    var nome: String
-
-    init(nome: String) {
-        self.nome = nome
-    }
-
-    func calcularMensalidade() -> Double {
-        return 0.0
-    }
-}
-
-class PlanoMensal: Plano {
-    init() {
-        super.init(nome: "Plano Mensal")
-    }
-
-    override func calcularMensalidade() -> Double {
-        return 120.0
-    }
-}
-
-class PlanoAnual: Plano {
-    init() {
-        super.init(nome: "Plano Anual (Promocional)")
-    }
-
-    override func calcularMensalidade() -> Double {
-        let custoTotalAnual = 12.0 * 120.0
-        let custoComDesconto = custoTotalAnual * 0.80
-        let mensalidade = custoComDesconto / 12.0
-        return mensalidade
-    }
-}
-
 protocol Manutencao {
     var nomeItem: String { get }
-    var dataUltimaManutencao: String { get set }
+    var dataUltimaManutencao: String { get }
     func realizarManutencao() -> Bool
 }
 
 class Aparelho: Manutencao {
     let nomeItem: String
-    var dataUltimaManutencao: String = "Nenhuma"
+    private(set) var dataUltimaManutencao: String = "Nenhuma"
 
     init(nomeItem: String) {
         self.nomeItem = nomeItem
@@ -171,51 +170,102 @@ class AulaColetiva: Aula {
     }
 }
 
+class Academia {
+    let nome: String
+    private var alunosMatriculados: [String: Aluno] = [:]
+    private var instrutoresContratados: [String: Instrutor] = [:]
+    private var aparelhos: [Aparelho] = []
+    private var aulasDisponiveis: [Aula] = []
+
+    init(nome: String) {
+        self.nome = nome
+    }
+
+    func adicionarAparelho(_ aparelho: Aparelho) {
+        aparelhos.append(aparelho)
+        print("Aparelho \(aparelho.nomeItem) adicionado.")
+    }
+
+    func adicionarAula(_ aula: Aula) {
+        aulasDisponiveis.append(aula)
+        print("Aula de \(aula.nome) adicionada.")
+    }
+
+    func contratarInstrutor(_ instrutor: Instrutor) {
+        instrutoresContratados[instrutor.email] = instrutor
+        print("Instrutor \(instrutor.nome) contratado.")
+    }
+
+    func matricularAluno(_ aluno: Aluno) {
+        if alunosMatriculados[aluno.matricula] != nil {
+            print("Erro: Aluno com matrícula \(aluno.matricula) já existe.")
+        } else {
+            alunosMatriculados[aluno.matricula] = aluno
+            print("Aluno \(aluno.nome) matriculado.")
+        }
+    }
+
+    func matricularAluno(nome: String, email: String, matricula: String, plano: Plano) -> Aluno {
+        let novoAluno = Aluno(nome: nome, email: email, matricula: matricula, plano: plano)
+        matricularAluno(novoAluno)
+        return novoAluno
+    }
+
+    func buscarAluno(porMatricula matricula: String) -> Aluno? {
+        return alunosMatriculados[matricula]
+    }
+
+    func listarAlunos() {
+        print("\n======= Lista de Alunos =======")
+        if alunosMatriculados.isEmpty {
+            print("Nenhum aluno matriculado.")
+        } else {
+            for aluno in alunosMatriculados.values.sorted(by: { $0.nome < $1.nome }) {
+                print(aluno.getDescricao())
+                print("---------------------------------")
+            }
+        }
+    }
+
+    func listarAulas() {
+        print("\n======= Lista de Aulas =======")
+        if aulasDisponiveis.isEmpty {
+            print("Nenhuma aula cadastrada.")
+        } else {
+            for aula in aulasDisponiveis {
+                print(aula.getDescricao())
+                print("---------------------------------")
+            }
+        }
+    }
+}
+
+print("\n========== ACADEMIA ==========")
+let academia = Academia(nome: "Academia TopFit")
+
 let planoMensal = PlanoMensal()
 let planoAnual = PlanoAnual()
 
-let aluno1 = Aluno(nome: "Eduarda", email: "duda@email.com", matricula: "A1", plano: planoMensal)
-aluno1.nivel = .iniciante
-let aluno2 = Aluno(nome: "Pedro", email: "pedro@email.com", matricula: "B2", plano: planoAnual)
-aluno2.nivel = .intermediario
-
 let instrutor1 = Instrutor(nome: "João", email: "joao@academia.com", especialidade: "Personal Trainer")
 let instrutor2 = Instrutor(nome: "Maria", email: "maria@academia.com", especialidade: "Yoga")
+academia.contratarInstrutor(instrutor1)
+academia.contratarInstrutor(instrutor2)
 
+let aluno1 = academia.matricularAluno(nome: "Eduarda", email: "duda@email.com", matricula: "A1", plano: planoMensal)
+aluno1.nivel = .iniciante
+let aluno2 = academia.matricularAluno(nome: "Pedro", email: "pedro@email.com", matricula: "B2", plano: planoAnual)
+aluno2.nivel = .intermediario
 
-print("======= ALUNOS/INSTRUTORES =======")
-print("[Aluno 1]:")
-print(aluno1.getDescricao())
-print("Mensalidade: R$ \(String(format: "%.2f", aluno1.plano.calcularMensalidade()))")
-print("---------------------------------")
-print("\n[Aluno 2]:")
-print(aluno2.getDescricao())
-print("Mensalidade: R$ \(String(format: "%.2f", aluno2.plano.calcularMensalidade()))")
-print("---------------------------------")
-print("\n[Instrutor 1]:")
-print(instrutor1.getDescricao())
-print("---------------------------------")
-print("\n[Instrutor 2]:")
-print(instrutor2.getDescricao())
-
-print("\n========== MANUTENÇÃO ==========")
 let esteira = Aparelho(nomeItem: "Esteira")
-print("\nAparelho: \(esteira.nomeItem), \nÚltima Manutenção: \(esteira.dataUltimaManutencao)")
-_ = esteira.realizarManutencao()
-print("Nova Última Manutenção: \(esteira.dataUltimaManutencao)")
+academia.adicionarAparelho(esteira)
 
-
-print("\n========== AULAS ==========")
 let aulaPersonal = AulaPersonal(nome: "Musculação", instrutor: instrutor1, aluno: aluno1)
-print("\nAULA PERSONAL")
-print(aulaPersonal.getDescricao())
-
-
 let aulaColetiva = AulaColetiva(nome: "Yoga", instrutor: instrutor2)
-
-print("\nInscrições em Aula Coletiva (Yoga):")
 _ = aulaColetiva.inscrever(aluno: aluno1)
 _ = aulaColetiva.inscrever(aluno: aluno2)
 
-print("\nAULA COLETIVA")
-print(aulaColetiva.getDescricao())
+academia.adicionarAula(aulaPersonal)
+academia.adicionarAula(aulaColetiva)
+
+academia.listarAlunos()
+academia.listarAulas()
